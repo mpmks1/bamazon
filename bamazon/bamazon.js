@@ -1,7 +1,7 @@
 // require mysql and inquirer
 var mysql = require('mysql');
 var inquirer = require('inquirer');
-
+// establish connection to sql db
 var con = mysql.createConnection({
   host: "localhost",
 
@@ -28,8 +28,8 @@ function startBamazon() {
       choices: ["View all items", "By product name", "By price", "By Department"]
     }
     //end inquirer prompt ,then the purchase function will sort each response and call the related function
-  ]).then(function (purchase) {
-    var sort = purchase.byproduct
+  ]).then(function (first) {
+    var sort = first.byproduct
     if (sort === "View all items") {
       viewAll();
     }
@@ -46,13 +46,13 @@ function startBamazon() {
 }; //end .then function 
 
 
-  function viewAll() {
-    con.query("SELECT product_name, price, department_name FROM products", function (err, result, fields) {
-      if (err) throw err;
-      console.log(result);
-      con.end();
-    }); //end con.query
-  }; //end view all
+function viewAll() {
+  con.query("SELECT product_name, price, department_name FROM products", function (err, result, fields) {
+    if (err) throw err;
+    console.log(result);
+    //  con.end();
+  }); //end con.query
+}; //end view all
 
 function byProductName() {
   console.log("product");
@@ -63,15 +63,46 @@ function byPrice() {
 }; //end by Price
 
 function byDepartment() {
-  // use con.query function to see if item is avail for purchase
-    con.query("SELECT item_id, product_name, price, department_name FROM products", function (err, result, fields) {
-      if (err) throw err;
-      console.log(result);
-      con.end();
-    }); //end con.query
-
-
-}; // end by dept
+  inquirer.prompt([
+    {
+      type: "list",
+      name: "bydept",
+      message: "Please select which dept you would like to view",
+      choices: ["food", "party", "clothing",]
+    }
+  ]) //end inquirer prompt
+    .then(function (dept) {
+      var x = dept.bydept;
+      con.query("SELECT item_id, product_name, price, department_name FROM products WHERE department_name = ?", [x], function (err, result, fields) {
+        if (err) throw err;
+        console.log(result);
+        //  con.end();
+        purchaseItem();
+      });
+    });
+    //ref. to final function in which user purchases the item
+}
+function purchaseItem () {
+inquirer.prompt([
+  {
+    type: "input",
+    name: "purchase",
+    message: "So, which item would you like to buy? (please select the coresponding item name)",
+  }
+]) //end inquirer prompt\
+.then(function (buy) {
+  var y = buy.purchase;
+  con.query("SELECT * FROM products WHERE product_name = ?", [y], function (err, result, fields) {
+    if (err) throw err;
+   console.log("you have purchased 1: " + y);
+   con.end(); 
+  });
+});
+//   con.query("UPDATE products SET stock_quantity = stock_quantity - 1, WHERE product_name = ?",  [y], function (err, result, fields) {
+//  console.log("stock quantity updated new quantity = " + result);
+//  //  con.end();
+//   });
+} // end purchase item.
 
 
 // // Starts the game!
